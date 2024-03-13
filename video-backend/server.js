@@ -1,0 +1,56 @@
+const express = require("express");
+const cors = require("cors");
+const fileUpload = require("express-fileupload");
+const { uploadFile } = require("./src/utils/uploadFile");
+const { connect } = require("mongoose");
+const bodyParser = require("body-parser");
+const { database } = require("./src/config/database");
+const path = require("path");
+
+const app = express();
+
+app.use(fileUpload());
+app.use(cors());
+
+try {
+  connect(
+    database,
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useCreateIndex: true,
+      useFindAndModify: false,
+    },
+    () => {
+      console.log("Database Connected");
+    }
+  );
+} catch (err) {
+  console.log("Database Connection Error");
+}
+
+app.use(express.static(path.join(__dirname, "/uploads")));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+const authRoute = require("./src/routes/auth.routes");
+const userRoute = require("./src/routes/user.routes");
+const videoRoute = require("./src/routes/video.routes");
+const commentRoute = require("./src/routes/comment.routes");
+
+app.use("/video", videoRoute);
+app.use("/comment", commentRoute);
+app.use("/user", userRoute);
+app.use("/auth", authRoute);
+
+app.post("/upload-file", uploadFile);
+
+app.get("/", (req, res) => {
+  res.send("<div><h1>The Server is Running</h1></div>");
+});
+
+var port = process.env.PORT || 5000;
+
+app.listen(port, () => {
+  console.log("Server is Running on " + port);
+});
